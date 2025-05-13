@@ -1,83 +1,70 @@
-import { View, Text, TextInput, Button, StyleSheet, Alert } from "react-native";
-import * as SecureStore from 'expo-secure-store';
+import { View, TextInput, Button, StyleSheet, Alert, Text } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from "expo-router";
 import { BACKEND_URL } from "@env";
 import axios from "axios";
 import { useState } from "react";
 
 export default function Login() {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [clicked, setClicked] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
-    const handleLogin = async () => {
-        // setClicked(true);
-        // if(clicked) return;
+  const login = async () => {
+    if (loading) return;
+    setLoading(true);
+    if (!email || !password) {
+      Alert.alert("Error", "Email and password required.");
+      setLoading(false);
+      return;
+    }
+    try {
+      const res = await axios.post(
+        `${BACKEND_URL}/signin`,
+        { email, password },
+      );
+      console.log(res);
+      if (res.status === 200) {
+        await AsyncStorage.setItem("token", res.data.user.token);
+        router.replace("/");
+      }
+    } catch (e) {
+      Alert.alert("Error", BACKEND_URL, e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        if (!email || !password) {
-            Alert.alert("Error", "Please enter both email ;and password.");
-            return;
-        }
-        
-        console.log("Logging in with:", { email, password, BACKEND_URL });
-        const res = await axios.post(`${BACKEND_URL}/signin`, {
-            email,
-            password
-        })
-
-        if (res.status === 200) {
-            Alert.alert("Login successful:", res);
-            const token = res.data.user.token;
-            await SecureStore.setItemAsync('authToken', token);
-            Alert.alert("Success", "Login successful!");
-            router.push("./");
-        }
-
-        Alert.alert("Login Attempt", `Email: ${email}\nPassword: ${password}`);
-    };
-
-    return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Login</Text>
-            <TextInput
-                style={styles.input}
-                placeholder="Email"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-            />
-            <TextInput
-                style={styles.input}
-                placeholder="Password"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-            />
-            <Button title="Login" onPress={handleLogin} />
-        </View>
-    )
+  return (
+    <View style={styles.v}>
+      <Text style={{textAlign: "center", fontSize: 30, marginBottom: 20}}>
+        Login
+      </Text>
+      <TextInput
+        placeholder="Email"
+        style={styles.i}
+        value={email}
+        onChangeText={setEmail}
+        autoCapitalize="none"
+      />
+      <TextInput
+        placeholder="Password"
+        style={styles.i}
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+      />
+      <Button disabled={loading} title={loading ? "..." : "Login"} onPress={login} />
+      <Text style={{textAlign: "center"}}>Dont Have An Account? <Text onPress={() => router.replace("/register")} style={styles.l}>
+        Register
+      </Text></Text>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#fff',
-        justifyContent: 'center',
-        padding: 20,
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 20,
-        textAlign: 'center',
-    },
-    input: {
-        height: 40,
-        borderColor: 'gray',
-        borderWidth: 1,
-        marginBottom: 12,
-        paddingHorizontal: 10,
-        borderRadius: 5,
-    },
+  v: { flex: 1, justifyContent: "center", padding: 20, backgroundColor: "#f9f9f9" },
+  i: { borderWidth: 1, borderColor: "#ccc", marginBottom: 10, padding: 8 },
+  l: { marginTop: 10, color: "blue", textAlign: "center" },
 });
