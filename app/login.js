@@ -21,7 +21,7 @@ export default function Login() {
     }
     try {
       const res = await axios.post(
-        `${BACKEND_URL}/signin`,
+        `https://quiz-topia-backend.onrender.com/signin`,
         { email, password },
       );
       console.log(res);
@@ -30,7 +30,7 @@ export default function Login() {
         router.replace("/");
       }
     } catch (e) {
-      Alert.alert("Error", BACKEND_URL, e.message);
+      Alert.alert("Error", "Invalid email or password.");
     } finally {
       setLoading(false);
     }
@@ -56,7 +56,7 @@ export default function Login() {
         secureTextEntry
       />
       <Button disabled={loading} title={loading ? "..." : "Login"} onPress={login} />
-      <Text style={{textAlign: "center"}}>Dont Have An Account? <Text onPress={() => router.replace("/register")} style={styles.l}>
+      <Text style={{textAlign: "center", fontSize: 18}}>Dont Have An Account? <Text onPress={() => router.replace("/register")} style={styles.l}>
         Register
       </Text></Text>
     </View>

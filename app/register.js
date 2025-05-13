@@ -31,15 +31,12 @@ export default function Register() {
         `${BACKEND_URL}/signup`,
         { email, username, password }
       );
-      if (status === 200) {
-        await AsyncStorage.setItem("token", data.user.token);
-        router.replace("/");
-      } else if (status === 201) {
-        Alert.alert("Error", "User already exists.");
-      }
+      await AsyncStorage.setItem("token", data.user.token);
+      router.replace("/");
     } catch (e) {
       const s = e.response?.status;
       if (s === 400) Alert.alert("Error", "Invalid signup data.");
+      else if (s === 409) Alert.alert("Error", "User already exists.");
       else Alert.alert("Error", "Signup failed.");
     } finally {
       setLoading(false);
@@ -48,6 +45,9 @@ export default function Register() {
 
   return (
     <View style={styles.v}>
+      <Text style={{textAlign: "center", fontSize: 30, marginBottom: 20}}>
+        Register
+      </Text>
       <TextInput
         placeholder="Email"
         style={styles.i}
@@ -77,9 +77,9 @@ export default function Register() {
         secureTextEntry
       />
       <Button disabled={loading} title={loading ? "..." : "Register"} onPress={signup} />
-      <Text onPress={() => router.replace("/login")} style={styles.l}>
+      <Text style={{textAlign: "center", fontSize: 18}}>Already Have An Account? <Text onPress={() => router.replace("/login")} style={styles.l}>
         Login
-      </Text>
+      </Text></Text>
     </View>
   );
 }
