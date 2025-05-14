@@ -1,9 +1,12 @@
-import { useState, useEffect } from 'react';
+import { 
+  View, Text, StyleSheet, Button, ScrollView, ActivityIndicator, 
+  Alert, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform 
+} from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { BACKEND_URL } from '@env';
-import { View, Text, StyleSheet, Button, ScrollView, ActivityIndicator, Alert, TouchableOpacity, TextInput } from 'react-native';
+import { useState, useEffect } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 
 export default function QuizPage() {
@@ -94,125 +97,183 @@ export default function QuizPage() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
+      <View style={styles.centered}>
         <ActivityIndicator size="large" color="#bb86fc" />
       </View>
     );
   }
 
   return (
-    <ScrollView 
-      style={styles.scrollView}           // make scrollable area flex
-      contentContainerStyle={styles.container}  // allow children to grow
+    <KeyboardAvoidingView 
+      style={styles.flex} 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <Text style={styles.title}>{quiz?.title}</Text>
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text style={styles.header}>{quiz?.title}</Text>
 
-      {/* MCQ Section */}
-      {quizContent.map((q, idx) => (
-        <View key={q._id} style={styles.questionBox}>
-          <Text style={styles.question}>{`${idx+1}. ${q.question}`}</Text>
-          {q.options.map(opt => {
-            const selected = selectedOptions[q._id] === opt;
-            return (
-              <TouchableOpacity
-                key={opt}
-                style={[styles.optionBox, selected && styles.optionSelected]}
-                onPress={() => handleOptionSelect(q._id, opt)}
-              >
-                <Text style={styles.option}>{opt}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      ))}
-      {!mcqSubmitted
-        ? <Button title="Submit Answers" onPress={submitMCQs} color="#bb86fc"/>
-        : <Text style={styles.score}>Score: {mcqScore} / {quizContent.length}</Text>
-      }
+        {quizContent.map((q, idx) => (
+          <View key={q._id} style={styles.card}>
+            <Text style={styles.question}>{`${idx + 1}. ${q.question}`}</Text>
+            {q.options.map(opt => {
+              const selected = selectedOptions[q._id] === opt;
+              return (
+                <TouchableOpacity
+                  key={opt}
+                  style={[
+                    styles.optionBox, 
+                    selected && styles.optionSelected
+                  ]}
+                  onPress={() => handleOptionSelect(q._id, opt)}
+                >
+                  <Text style={styles.optionText}>{opt}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        ))}
+        {!mcqSubmitted && quizContent.length > 0 
+          ? <Button title="Submit MCQs" onPress={submitMCQs} color="#bb86fc" />
+          : quizContent.length > 0 ? <Text style={styles.score}>Score: {mcqScore} / {quizContent.length}</Text>
+          : <Text style={styles.score}>Invalid Code</Text>
+        }
 
-      {/* Text Questions Section */}
-      <Text style={styles.textSectionTitle}>Text Questions</Text>
-      {textQuestions.map((tq, i) => (
-        <View key={i} style={styles.textBox}>
-          <Text style={styles.textQuestion}>{`${i+1}. ${tq}`}</Text>
-          <TextInput
-            style={styles.textInput}
-            multiline
-            placeholder="Your answer..."
-            placeholderTextColor="#777"
-            value={textAnswers[tq] || ''}
-            onChangeText={txt => setTextAnswers(prev => ({ ...prev, [tq]: txt }))}
+        {/* Text Questions */}
+        {textQuestions.length > 0 ?? <Text style={styles.subHeader}>Text Questions</Text>}
+        {textQuestions.map((tq, i) => (
+          <View key={i} style={styles.card}>
+            <Text style={styles.question}>{`${i + 1}. ${tq}`}</Text>
+            <TextInput
+              style={styles.textInput}
+              multiline
+              placeholder="Type your answer..."
+              placeholderTextColor="#999"
+              value={textAnswers[tq] || ''}
+              onChangeText={txt => setTextAnswers(prev => ({ ...prev, [tq]: txt }))}
+            />
+            <Button 
+              title="Validate" 
+              onPress={() => submitText(tq)} 
+              color="#bb86fc" 
+            />
+            {textVerdicts[tq] && (
+              <View style={styles.feedbackBox}>
+                <Text style={styles.verdict}>
+                  {textVerdicts[tq] === 'yes' ? '✅ Correct' : '❌ Incorrect'}
+                </Text>
+                <Text style={styles.feedback}>{textFeedbacks[tq]}</Text>
+              </View>
+            )}
+          </View>
+        ))}
+
+        <View style={styles.bottom}>
+          <Button 
+            title="Back To Home" 
+            onPress={() => router.push('/')} 
+            color="#e53935" 
           />
-          <Button title="Validate" onPress={() => submitText(tq)} color="#bb86fc"/>
-          {textVerdicts[tq] && (
-            <View style={styles.feedbackBox}>
-              <Text style={styles.verdict}>
-                {textVerdicts[tq] === 'yes' ? 'Correct' : 'Incorrect'}
-              </Text>
-              <Text style={styles.feedback}>{textFeedbacks[tq]}</Text>
-            </View>
-          )}
         </View>
-      ))}
-
-      <Button onPress={() => router.push('/')} title="Back To Home" />
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+  },
   scrollView: {
     flex: 1,
     width: '100%',
   },
   container: {
-    flexGrow: 1,             // let contentContainer expand
+    flexGrow: 1,
     backgroundColor: '#2d103b',
-    alignItems: 'flex-start',// stretch children full-width
+    alignItems: 'stretch',
     padding: 20,
   },
-  title: {
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#2d103b',
+  },
+  header: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  subHeader: {
     fontSize: 20,
     color: '#fff',
+    alignSelf: 'center',
+    marginTop: 30,
     marginBottom: 10,
   },
-  code: {
-    fontSize: 32,
-    color: '#bb86fc',
-    fontFamily: 'monospace',
-  },
-  questionBox: {
-    width: '100%',            // full-width question containers
+  card: {
+    backgroundColor: '#3a0d44',
+    borderRadius: 8,
+    padding: 15,
     marginVertical: 10,
   },
-  question:    { color: '#fff', fontSize: 16, marginBottom: 5 },
-  option:      { color: '#ddd', marginLeft: 10 },
-  textSectionTitle: { color: '#fff', fontSize: 18, marginTop: 20 },
-  textQuestion:     { color: '#ddd', marginVertical: 5 },
+  question: {
+    color: '#fff',
+    fontSize: 16,
+    marginBottom: 10,
+  },
   optionBox: {
-    borderWidth: 1, borderColor: '#555', padding: 8, marginVertical: 4, borderRadius: 4
+    borderWidth: 1,
+    borderColor: '#555',
+    borderRadius: 6,
+    padding: 12,
+    marginVertical: 6,
   },
   optionSelected: {
-    backgroundColor: '#bb86fc'
+    backgroundColor: '#bb86fc',
+    borderColor: '#bb86fc',
+  },
+  optionText: {
+    color: '#ddd',
   },
   score: {
-    color: '#fff', fontSize: 18, marginVertical: 10
-  },
-  textBox: {
-    width: '100%',            // full-width text answer containers
-    marginVertical: 10,
+    color: '#fff',
+    fontSize: 18,
+    alignSelf: 'center',
+    marginVertical: 15,
   },
   textInput: {
-    borderWidth: 1, borderColor: '#777', backgroundColor: 'rgba(255,255,255,0.1)',
-    color: '#fff', padding: 8, borderRadius: 4, minHeight: 60, marginVertical: 6
+    minHeight: 80,
+    borderWidth: 1,
+    borderColor: '#777',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 6,
+    padding: 10,
+    color: '#fff',
+    textAlignVertical: 'top',
+    marginBottom: 10,
   },
   feedbackBox: {
-    backgroundColor: '#3a0d44', padding: 8, borderRadius: 4, marginTop: 6
+    backgroundColor: '#48205b',
+    padding: 10,
+    borderRadius: 6,
+    marginTop: 10,
   },
   verdict: {
-    color: '#fff', fontWeight: 'bold', marginBottom: 4
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 4,
   },
   feedback: {
-    color: '#ddd'
+    color: '#ddd',
+  },
+  bottom: {
+    marginVertical: 20,
+    alignItems: 'center',
   },
 });
