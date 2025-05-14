@@ -1,5 +1,5 @@
 import { Redirect } from "expo-router";
-import { View, Text, ActivityIndicator, StyleSheet, ScrollView, Button, FlatList, TextInput, TouchableOpacity } from "react-native";
+import { View, Text, ActivityIndicator, StyleSheet, ScrollView, Button, FlatList, TextInput, TouchableOpacity, Alert } from "react-native";
 import { useEffect, useState } from "react";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
@@ -65,14 +65,22 @@ export default function Index() {
 
     const createQuiz = async () => {
         if (uploadLoading) return;
+        if (!pdf) {
+            Alert.alert("Error", "Please select a PDF first.");
+            return;
+        }
         setUploadLoading(true);
         const formData = new FormData();
         formData.append('pdf', { uri: pdf.uri, name: pdf.name, type: 'application/pdf' });
         formData.append('title', title);
         formData.append('token', token);
         try {
-            const res = await axios.post(`${BACKEND_URL}/pdf-to-quiz`, 
-                formData
+            const res = await axios.post(
+                `${BACKEND_URL}/pdf-to-quiz`, 
+                formData,
+                {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                }
             );
             const code = res.data.link_code || res.data['link-code'];
             console.log(code);
@@ -160,6 +168,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 20,
         width: '90%',
+        maxWidth: 700,
     },
     directInput: {
         flex: 1,
@@ -202,11 +211,11 @@ const styles = StyleSheet.create({
         marginBottom: 15,
     },
     quizBox: {
-        width: '70vw',
+        width: 400,
+
         padding: 15,
         marginBottom: 12,
-        gap: 20,
-        maxWidth: 500,
+        gap: 10,
         backgroundColor: '#3a0d44',
         borderRadius: 8,
         justifyContent: 'space-between',

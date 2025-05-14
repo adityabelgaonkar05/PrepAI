@@ -1,13 +1,16 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
+import { View, Text, StyleSheet, Button } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 
 export default function QuizPage() {
   const { code } = useLocalSearchParams();
+  const router = useRouter();
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Quiz Code:</Text>
       <Text style={styles.code}>{code}</Text>
+      <Button onPress={() => router.push('/')} title='Back To Home'/>
     </View>
   );
 }

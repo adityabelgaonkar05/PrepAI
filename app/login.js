@@ -21,7 +21,7 @@ export default function Login() {
     }
     try {
       const res = await axios.post(
-        `https://quiz-topia-backend.onrender.com/signin`,
+        `${BACKEND_URL}/signin`,
         { email, password },
       );
       console.log(res);
