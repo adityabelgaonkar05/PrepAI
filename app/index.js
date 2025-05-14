@@ -1,5 +1,5 @@
+import React, { useEffect, useState } from 'react';
 import { SafeAreaView, View, Text, ActivityIndicator, StyleSheet, Button, FlatList, TextInput, TouchableOpacity, Alert, Platform } from "react-native";
-import { useEffect, useState } from "react";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
@@ -7,13 +7,55 @@ import axios from 'axios';
 import { BACKEND_URL } from '@env';
 import * as Clipboard from 'expo-clipboard';
 
+// Memoized header to manage its own title state and avoid re-render on typing
+const HeaderComponent = React.memo(({ directCode, setDirectCode, handleDirectNavigate, pickPdf, pdf, createQuiz, uploadLoading }) => {
+    const [localTitle, setLocalTitle] = useState('');
+    return (
+        <>
+            <Text style={styles.header}>📚 PrepAI Quiz Manager</Text>
+            <View style={styles.directNav}>
+                <TextInput
+                    style={styles.directInput}
+                    placeholder="Enter quiz code"
+                    placeholderTextColor="#ccc"
+                    value={directCode}
+                    onChangeText={setDirectCode}
+                />
+                <Button title="Go" onPress={handleDirectNavigate} color="#bb86fc" />
+            </View>
+            <View style={styles.uploadContainer}>
+                <Button title="Select PDF" onPress={pickPdf} color="#bb86fc" />
+                {pdf && <Text style={styles.fileName}>{pdf.name}</Text>}
+                {pdf && (
+                    <>
+                        <TextInput
+                            style={styles.titleInput}
+                            placeholder="Enter quiz title"
+                            placeholderTextColor="#ccc"
+                            value={localTitle}
+                            onChangeText={setLocalTitle}
+                            blurOnSubmit={false}
+                            returnKeyType="done"
+                        />
+                        {localTitle ? (
+                            uploadLoading
+                            ? <ActivityIndicator color="#bb86fc" />
+                            : <Button title="Create Quiz" onPress={() => createQuiz(localTitle)} color="#bb86fc" />
+                        ) : null}
+                    </>
+                )}
+            </View>
+            <Text style={styles.sectionTitle}>My Quizzes</Text>
+        </>
+    );
+});
+
 export default function Index() {
     const [isLoading, setIsLoading] = useState(true);
     const [token, setToken] = useState(null);
     const [pdf, setPdf] = useState(null);
     const [quizzesList, setQuizzesList] = useState([]);
     const [directCode, setDirectCode] = useState('');
-    const [title, setTitle] = useState('');
     const [uploadLoading, setUploadLoading] = useState(false);
     const router = useRouter();
 
@@ -81,10 +123,9 @@ export default function Index() {
         if (directCode.trim()) router.push(`/quiz/${directCode.trim()}`);
     };
 
-    const createQuiz = async () => {
-        if (uploadLoading) return;
-        if (!pdf) {
-            Alert.alert("Error", "Please select a PDF first.");
+    const createQuiz = async (quizTitle) => {
+        if (uploadLoading || !pdf) {
+            if (!pdf) Alert.alert("Error", "Please select a PDF first.");
             return;
         }
         setUploadLoading(true);
@@ -92,7 +133,7 @@ export default function Index() {
             const fileUri = pdf.uri;
             const formData = new FormData();
             formData.append('pdf', { uri: fileUri, name: pdf.name, type: 'application/pdf' });
-            formData.append('title', title);
+            formData.append('title', quizTitle);
             formData.append('token', token);
 
             const response = await fetch(`${BACKEND_URL}/pdf-to-quiz`, {
@@ -147,48 +188,20 @@ export default function Index() {
     return (
         <SafeAreaView style={styles.safeArea}>
             <FlatList
-                keyboardShouldPersistTaps="handled"
+                keyboardShouldPersistTaps="always"
                 keyboardDismissMode="none"
                 data={quizzesList}
                 keyExtractor={item => item.link_code || item.code}
                 contentContainerStyle={styles.container}
-                ListHeaderComponent={() => (
-                    <>
-                        <Text style={styles.header}>📚 PrepAI Quiz Manager</Text>
-                        <View style={styles.directNav}>
-                            <TextInput
-                                style={styles.directInput}
-                                placeholder="Enter quiz code"
-                                placeholderTextColor="#ccc"
-                                value={directCode}
-                                onChangeText={setDirectCode}
-                            />
-                            <Button title="Go" onPress={handleDirectNavigate} color="#bb86fc" />
-                        </View>
-                        <View style={styles.uploadContainer}>
-                            <Button title="Select PDF" onPress={pickPdf} color="#bb86fc" />
-                            {pdf ? <Text style={styles.fileName}>Selected PDF: {pdf.name}</Text> : null}
-                            {pdf && (
-                                <>
-                                    <Text style={styles.fileName}>{pdf.name}</Text>
-                                    <TextInput
-                                        style={styles.titleInput}
-                                        placeholder="Enter quiz title"
-                                        placeholderTextColor="#ccc"
-                                        value={title}
-                                        onChangeText={setTitle}
-                                    />
-                                    {title ? (
-                                        uploadLoading
-                                        ? <ActivityIndicator color="#bb86fc" />
-                                        : <Button title="Create Quiz" onPress={createQuiz} color="#bb86fc" />
-                                    ) : null}
-                                </>
-                            )}
-                        </View>
-                        <Text style={styles.sectionTitle}>My Quizzes</Text>
-                    </>
-                )}
+                ListHeaderComponent={<HeaderComponent
+                    directCode={directCode}
+                    setDirectCode={setDirectCode}
+                    handleDirectNavigate={handleDirectNavigate}
+                    pickPdf={pickPdf}
+                    pdf={pdf}
+                    createQuiz={createQuiz}
+                    uploadLoading={uploadLoading}
+                />}
                 renderItem={({ item }) => (
                     <View style={styles.quizBox}>
                         <TouchableOpacity style={styles.quizInfo} onPress={() => router.push(`/quiz/${item.link_code}`)}>
