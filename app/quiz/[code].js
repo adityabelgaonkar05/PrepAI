@@ -3,7 +3,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { BACKEND_URL } from '@env';
-import { View, Text, StyleSheet, Button, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, Button, ScrollView, ActivityIndicator, Alert, TouchableOpacity, TextInput } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 
 export default function QuizPage() {
@@ -14,6 +14,12 @@ export default function QuizPage() {
   const [quizContent, setQuizContent] = useState([]);
   const [textQuestions, setTextQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedOptions, setSelectedOptions] = useState({});
+  const [mcqSubmitted, setMcqSubmitted] = useState(false);
+  const [mcqScore, setMcqScore] = useState(0);
+  const [textAnswers, setTextAnswers] = useState({});
+  const [textFeedbacks, setTextFeedbacks] = useState({});
+  const [textVerdicts, setTextVerdicts] = useState({});
 
   useEffect(() => {
     async function fetchToken() {
@@ -57,6 +63,35 @@ export default function QuizPage() {
     }
   };
 
+  const handleOptionSelect = (id, opt) => {
+    if (mcqSubmitted) return;
+    setSelectedOptions(prev => ({ ...prev, [id]: opt }));
+  };
+
+  const submitMCQs = () => {
+    let score = 0;
+    quizContent.forEach(q => {
+      if (selectedOptions[q._id] === q.answer) score++;
+    });
+    setMcqScore(score);
+    setMcqSubmitted(true);
+  };
+
+  const submitText = async (question) => {
+    const answer = textAnswers[question]?.trim();
+    if (!answer) return Alert.alert("Enter answer");
+    try {
+      const res = await axios.post(
+        `${BACKEND_URL}/validate-answer`,
+        { token, pdfContentId: quiz.PdfContentId, question, answer }
+      );
+      setTextVerdicts(prev => ({ ...prev, [question]: res.data.verdict }));
+      setTextFeedbacks(prev => ({ ...prev, [question]: res.data.feedback }));
+    } catch (e) {
+      console.error("Validation failed", e);
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.container}>
@@ -66,31 +101,74 @@ export default function QuizPage() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView 
+      style={styles.scrollView}           // make scrollable area flex
+      contentContainerStyle={styles.container}  // allow children to grow
+    >
       <Text style={styles.title}>{quiz?.title}</Text>
-      {quizContent?.map((q, idx) => (
+
+      {/* MCQ Section */}
+      {quizContent.map((q, idx) => (
         <View key={q._id} style={styles.questionBox}>
-          <Text style={styles.question}>{`${idx + 1}. ${q.question}`}</Text>
-          {q.options.map(opt => (
-            <Text key={opt} style={styles.option}>{`\u2022 ${opt}`}</Text>
-          ))}
+          <Text style={styles.question}>{`${idx+1}. ${q.question}`}</Text>
+          {q.options.map(opt => {
+            const selected = selectedOptions[q._id] === opt;
+            return (
+              <TouchableOpacity
+                key={opt}
+                style={[styles.optionBox, selected && styles.optionSelected]}
+                onPress={() => handleOptionSelect(q._id, opt)}
+              >
+                <Text style={styles.option}>{opt}</Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       ))}
+      {!mcqSubmitted
+        ? <Button title="Submit Answers" onPress={submitMCQs} color="#bb86fc"/>
+        : <Text style={styles.score}>Score: {mcqScore} / {quizContent.length}</Text>
+      }
+
+      {/* Text Questions Section */}
       <Text style={styles.textSectionTitle}>Text Questions</Text>
       {textQuestions.map((tq, i) => (
-        <Text key={i} style={styles.textQuestion}>{`${i + 1}. ${tq}`}</Text>
+        <View key={i} style={styles.textBox}>
+          <Text style={styles.textQuestion}>{`${i+1}. ${tq}`}</Text>
+          <TextInput
+            style={styles.textInput}
+            multiline
+            placeholder="Your answer..."
+            placeholderTextColor="#777"
+            value={textAnswers[tq] || ''}
+            onChangeText={txt => setTextAnswers(prev => ({ ...prev, [tq]: txt }))}
+          />
+          <Button title="Validate" onPress={() => submitText(tq)} color="#bb86fc"/>
+          {textVerdicts[tq] && (
+            <View style={styles.feedbackBox}>
+              <Text style={styles.verdict}>
+                {textVerdicts[tq] === 'yes' ? 'Correct' : 'Incorrect'}
+              </Text>
+              <Text style={styles.feedback}>{textFeedbacks[tq]}</Text>
+            </View>
+          )}
+        </View>
       ))}
+
       <Button onPress={() => router.push('/')} title="Back To Home" />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  scrollView: {
     flex: 1,
+    width: '100%',
+  },
+  container: {
+    flexGrow: 1,             // let contentContainer expand
     backgroundColor: '#2d103b',
-    justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'flex-start',// stretch children full-width
     padding: 20,
   },
   title: {
@@ -103,9 +181,38 @@ const styles = StyleSheet.create({
     color: '#bb86fc',
     fontFamily: 'monospace',
   },
-  questionBox: { marginVertical: 10 },
+  questionBox: {
+    width: '100%',            // full-width question containers
+    marginVertical: 10,
+  },
   question:    { color: '#fff', fontSize: 16, marginBottom: 5 },
   option:      { color: '#ddd', marginLeft: 10 },
   textSectionTitle: { color: '#fff', fontSize: 18, marginTop: 20 },
   textQuestion:     { color: '#ddd', marginVertical: 5 },
+  optionBox: {
+    borderWidth: 1, borderColor: '#555', padding: 8, marginVertical: 4, borderRadius: 4
+  },
+  optionSelected: {
+    backgroundColor: '#bb86fc'
+  },
+  score: {
+    color: '#fff', fontSize: 18, marginVertical: 10
+  },
+  textBox: {
+    width: '100%',            // full-width text answer containers
+    marginVertical: 10,
+  },
+  textInput: {
+    borderWidth: 1, borderColor: '#777', backgroundColor: 'rgba(255,255,255,0.1)',
+    color: '#fff', padding: 8, borderRadius: 4, minHeight: 60, marginVertical: 6
+  },
+  feedbackBox: {
+    backgroundColor: '#3a0d44', padding: 8, borderRadius: 4, marginTop: 6
+  },
+  verdict: {
+    color: '#fff', fontWeight: 'bold', marginBottom: 4
+  },
+  feedback: {
+    color: '#ddd'
+  },
 });
