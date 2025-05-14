@@ -1,5 +1,5 @@
 import { Redirect } from "expo-router";
-import { View, Text, ActivityIndicator, StyleSheet, ScrollView, Button, FlatList, TextInput, TouchableOpacity, Alert } from "react-native";
+import { View, Text, ActivityIndicator, StyleSheet, ScrollView, Button, FlatList, TextInput, TouchableOpacity, Alert, Platform } from "react-native";
 import { useEffect, useState } from "react";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
@@ -55,8 +55,28 @@ export default function Index() {
     };
 
     const pickPdf = async () => {
-        const res = await DocumentPicker.getDocumentAsync({ type: 'application/pdf' });
-        if (res.type === 'success') setPdf(res);
+        console.log('pickPdf called');
+        let res;
+        try {
+            // filter to PDF MIME type explicitly
+            const pdfFilter = ['application/pdf'];
+            res = await DocumentPicker.getDocumentAsync({
+                type: pdfFilter,
+                copyToCacheDirectory: Platform.OS !== 'web',
+            });
+        } catch (e) {
+            console.error('Error opening document picker', e);
+            Alert.alert('Error', 'Document picker failed');
+            return;
+        }
+        console.log('DocumentPicker result:', res);
+        if (!res.canceled && res.assets && res.assets.length > 0) {
+            const asset = res.assets[0];
+            setPdf(asset);
+            Alert.alert('PDF Selected', asset.name);
+        } else {
+            Alert.alert('Selection cancelled');
+        }
     };
 
     const handleDirectNavigate = () => {
@@ -70,23 +90,40 @@ export default function Index() {
             return;
         }
         setUploadLoading(true);
-        const formData = new FormData();
-        formData.append('pdf', { uri: pdf.uri, name: pdf.name, type: 'application/pdf' });
-        formData.append('title', title);
-        formData.append('token', token);
         try {
-            const res = await axios.post(
-                `${BACKEND_URL}/pdf-to-quiz`, 
-                formData,
-                {
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                }
-            );
-            const code = res.data.link_code || res.data['link-code'];
-            console.log(code);
-            router.push(`/quiz/${code}`);
+            const fileUri = pdf.uri;
+            const formData = new FormData();
+            formData.append('pdf', { uri: fileUri, name: pdf.name, type: 'application/pdf' });
+            formData.append('title', title);
+            formData.append('token', token);
+
+            const response = await fetch(`${BACKEND_URL}/pdf-to-quiz`, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'multipart/form-data',
+                },
+                body: formData,
+            });
+            if (!response.ok) {
+                const text = await response.text();
+                console.error('Upload failed', response.status, text);
+                Alert.alert('Error', `Upload failed (Status: ${response.status})`);
+                return;
+            }
+            const data = await response.json();
+            const code = data.link_code || data['link-code'];
+            if (code) {
+                Alert.alert('Quiz Created', `Your quiz code is ${code}`, [
+                    { text: 'OK', onPress: () => router.push(`/quiz/${code}`) }
+                ]);
+            } else {
+                console.error('No code returned', data);
+                Alert.alert('Error', 'Quiz created but no code returned');
+            }
         } catch (e) {
             console.error('Quiz creation failed', e);
+            Alert.alert('Error', e.message || 'Unknown error during upload');
         } finally {
             setUploadLoading(false);
         }
@@ -119,6 +156,7 @@ export default function Index() {
             </View>
             <View style={styles.uploadContainer}>
                 <Button title="Select PDF" onPress={pickPdf} color="#bb86fc" />
+                {pdf ? <Text style={styles.fileName}>Selected PDF: {pdf.name}</Text> : null}
                 {pdf && (
                     <>
                         <Text style={styles.fileName}>{pdf.name}</Text>
