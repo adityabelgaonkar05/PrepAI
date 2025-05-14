@@ -1,5 +1,4 @@
-import { Redirect } from "expo-router";
-import { View, Text, ActivityIndicator, StyleSheet, ScrollView, Button, FlatList, TextInput, TouchableOpacity, Alert, Platform } from "react-native";
+import { SafeAreaView, View, Text, ActivityIndicator, StyleSheet, ScrollView, Button, FlatList, TextInput, TouchableOpacity, Alert, Platform } from "react-native";
 import { useEffect, useState } from "react";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
@@ -58,7 +57,6 @@ export default function Index() {
         console.log('pickPdf called');
         let res;
         try {
-            // filter to PDF MIME type explicitly
             const pdfFilter = ['application/pdf'];
             res = await DocumentPicker.getDocumentAsync({
                 type: pdfFilter,
@@ -143,7 +141,9 @@ export default function Index() {
     }
 
     return (
+        <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.container}>
+            <Text style={styles.header}>📚 PrepAI Quiz Manager</Text>
             <View style={styles.directNav}>
                 <TextInput
                     style={styles.directInput}
@@ -191,21 +191,31 @@ export default function Index() {
             />
             <Button title="Logout" onPress={handleLogout} color="#e53935" />
         </ScrollView>
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
+    safeArea: {
         flex: 1,
         backgroundColor: '#2d103b',
+    },
+    container: {
         alignItems: 'center',
         paddingVertical: 20,
+        paddingHorizontal: 15,
+    },
+    header: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#fff',
+        marginBottom: 20,
     },
     directNav: { 
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 20,
-        width: '90%',
+        width: '100%',
         maxWidth: 700,
     },
     directInput: {
@@ -219,16 +229,22 @@ const styles = StyleSheet.create({
         borderRadius: 4,
     },
     uploadContainer: {
-        width: '90%',
+        width: '100%',
+        maxWidth: 700,
         marginBottom: 30,
         alignItems: 'center',
         backgroundColor: '#3a0d44',
-        padding: 15,
-        borderRadius: 8,
+        padding: 20,
+        borderRadius: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 5,
     },
     fileName: {
         marginTop: 8,
-        marginBottom: 8,
+        marginVertical: 8,
         fontStyle: 'italic',
         color: '#eee',
     },
@@ -239,36 +255,40 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255,255,255,0.1)',
         color: '#fff',
         padding: 8,
-        marginVertical: 10,
+        marginVertical: 12,
         borderRadius: 4,
     },
     sectionTitle: {
-        fontSize: 20,
+        fontSize: 22,
         fontWeight: 'bold',
         color: '#fff',
-        marginBottom: 15,
+        marginVertical: 15,
     },
     quizBox: {
-        width: 400,
-
+        width: 350,
         padding: 15,
         marginBottom: 12,
-        gap: 10,
         backgroundColor: '#3a0d44',
-        borderRadius: 8,
+        borderRadius: 10,
+        padding: 18,
         justifyContent: 'space-between',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
+        elevation: 3,
+        alignItems: 'center',
     },
     quizTitle: {
-        fontSize: 16,
+        fontSize: 18,
         color: '#fff',
         flex: 1,
-        marginRight: 10,
+        textAlign: 'center',
     },
     quizCode: {
         fontFamily: 'monospace',
         color: '#ddd',
+        textAlign: 'center',
     },
-    quizInfo: { 
-        flex: 1
-    },
+    quizInfo: { flex: 1, paddingRight: 10 },
 });
