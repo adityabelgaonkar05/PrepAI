@@ -13,7 +13,7 @@ export default function Layout() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#2d103b',
+    backgroundColor: '#191A1F',
     padding: 20,
   },
 });

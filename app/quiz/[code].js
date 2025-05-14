@@ -98,7 +98,7 @@ export default function QuizPage() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#bb86fc" />
+        <ActivityIndicator size="large" color="#6849FF" />
       </View>
     );
   }
@@ -136,7 +136,7 @@ export default function QuizPage() {
           </View>
         ))}
         {!mcqSubmitted && quizContent.length > 0 
-          ? <Button title="Submit MCQs" onPress={submitMCQs} color="#bb86fc" />
+          ? <Button title="Submit MCQs" onPress={submitMCQs} color="#6849FF" />
           : quizContent.length > 0 ? <Text style={styles.score}>Score: {mcqScore} / {quizContent.length}</Text>
           : <Text style={styles.score}>Invalid Code</Text>
         }
@@ -157,7 +157,7 @@ export default function QuizPage() {
             <Button 
               title="Validate" 
               onPress={() => submitText(tq)} 
-              color="#bb86fc" 
+              color="#6849FF" 
             />
             {textVerdicts[tq] && (
               <View style={styles.feedbackBox}>
@@ -174,7 +174,7 @@ export default function QuizPage() {
           <Button 
             title="Back To Home" 
             onPress={() => router.push('/')} 
-            color="#e53935" 
+            color="#6849FF" 
           />
         </View>
       </ScrollView>
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flexGrow: 1,
-    backgroundColor: '#2d103b',
+    backgroundColor: '#191A1F',
     alignItems: 'stretch',
     padding: 20,
   },
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#2d103b',
+    backgroundColor: '#191A1F',
   },
   header: {
     fontSize: 24,
@@ -217,10 +217,12 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   card: {
-    backgroundColor: '#3a0d44',
+    // backgroundColor: '',
     borderRadius: 8,
     padding: 15,
     marginVertical: 10,
+    borderWidth: 1,
+    borderColor: '#555',
   },
   question: {
     color: '#fff',
@@ -235,8 +237,8 @@ const styles = StyleSheet.create({
     marginVertical: 6,
   },
   optionSelected: {
-    backgroundColor: '#bb86fc',
-    borderColor: '#bb86fc',
+    backgroundColor: '#6849FF',
+    borderColor: '#6849FF',
   },
   optionText: {
     color: '#ddd',
@@ -259,7 +261,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   feedbackBox: {
-    backgroundColor: '#48205b',
+    backgroundColor: '#6849FF',
     padding: 10,
     borderRadius: 6,
     marginTop: 10,

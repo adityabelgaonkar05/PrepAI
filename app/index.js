@@ -21,10 +21,10 @@ const HeaderComponent = React.memo(({ directCode, setDirectCode, handleDirectNav
                     value={directCode}
                     onChangeText={setDirectCode}
                 />
-                <Button title="Go" onPress={handleDirectNavigate} color="#bb86fc" />
+                <Button title="Go" onPress={handleDirectNavigate} color="#6849FF" />
             </View>
             <View style={styles.uploadContainer}>
-                <Button title="Select PDF" onPress={pickPdf} color="#bb86fc" />
+                <Button title="Select PDF" onPress={pickPdf} color="#6849FF" />
                 {pdf && <Text style={styles.fileName}>{pdf.name}</Text>}
                 {pdf && (
                     <>
@@ -34,13 +34,12 @@ const HeaderComponent = React.memo(({ directCode, setDirectCode, handleDirectNav
                             placeholderTextColor="#ccc"
                             value={localTitle}
                             onChangeText={setLocalTitle}
-                            blurOnSubmit={false}
                             returnKeyType="done"
                         />
                         {localTitle ? (
                             uploadLoading
-                            ? <ActivityIndicator color="#bb86fc" />
-                            : <Button title="Create Quiz" onPress={() => createQuiz(localTitle)} color="#bb86fc" />
+                            ? <ActivityIndicator color="#6849FF" />
+                            : <Button title="Create Quiz" onPress={() => createQuiz(localTitle)} color="#6849FF" />
                         ) : null}
                     </>
                 )}
@@ -208,7 +207,7 @@ export default function Index() {
                             <Text style={styles.quizTitle} numberOfLines={1} ellipsizeMode="tail">{item.title}</Text>
                             <Text selectable style={styles.quizCode}>{item.link_code}</Text>
                         </TouchableOpacity>
-                        <Button title="Copy" onPress={() => Clipboard.setString(item.link_code)} color="#bb86fc" />
+                        <Button title="Copy" onPress={() => Clipboard.setString(item.link_code)} color="#6849FF" />
                     </View>
                 )}
                 ListFooterComponent={() => (
@@ -224,7 +223,7 @@ export default function Index() {
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#2d103b',
+        backgroundColor: '#191A1F',
     },
     container: {
         flexGrow: 1,
@@ -247,7 +246,7 @@ const styles = StyleSheet.create({
     directInput: {
         flex: 1,
         borderWidth: 1,
-        borderColor: '#bb86fc',
+        borderColor: '#6849FF',
         backgroundColor: 'rgba(255,255,255,0.1)',
         color: '#fff',
         padding: 8,
@@ -259,7 +258,7 @@ const styles = StyleSheet.create({
         maxWidth: 700,
         marginBottom: 30,
         alignItems: 'center',
-        backgroundColor: '#3a0d44',
+        backgroundColor: '#27282C',
         padding: 20,
         borderRadius: 12,
         shadowColor: '#000',
@@ -277,7 +276,7 @@ const styles = StyleSheet.create({
     titleInput: { 
         width: '100%',
         borderWidth: 1,
-        borderColor: '#bb86fc',
+        borderColor: '#6849FF',
         backgroundColor: 'rgba(255,255,255,0.1)',
         color: '#fff',
         padding: 8,
@@ -294,7 +293,7 @@ const styles = StyleSheet.create({
         width: '100%',
         maxWidth: 700,
         marginBottom: 12,
-        backgroundColor: '#3a0d44',
+        backgroundColor: '#27282C',
         borderRadius: 10,
         padding: 18,
         justifyContent: 'center',
@@ -306,13 +305,13 @@ const styles = StyleSheet.create({
     },
     quizTitle: {
         fontSize: 18,
-        color: '#fff',
+        color: '#FFF',
         marginBottom: 6,
         textAlign: 'left',
     },
     quizCode: {
         fontFamily: 'monospace',
-        color: '#ddd',
+        color: '#CCC',
         textAlign: 'left',
     },
     quizInfo: { flex: 1, paddingRight: 10 },
