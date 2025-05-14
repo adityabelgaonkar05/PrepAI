@@ -1,4 +1,4 @@
-import { SafeAreaView, View, Text, ActivityIndicator, StyleSheet, ScrollView, Button, FlatList, TextInput, TouchableOpacity, Alert, Platform } from "react-native";
+import { SafeAreaView, View, Text, ActivityIndicator, StyleSheet, Button, FlatList, TextInput, TouchableOpacity, Alert, Platform } from "react-native";
 import { useEffect, useState } from "react";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
@@ -110,6 +110,10 @@ export default function Index() {
                 return;
             }
             const data = await response.json();
+            if (data.error && data.error.includes('Failed to parse Gemini response')) {
+                Alert.alert('Incompatible file.', 'This PDF has no readable content.');
+                return;
+            }
             const code = data.link_code || data['link-code'];
             if (code) {
                 Alert.alert('Quiz Created', `Your quiz code is ${code}`, [
@@ -142,43 +146,49 @@ export default function Index() {
 
     return (
         <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.container}>
-            <Text style={styles.header}>📚 PrepAI Quiz Manager</Text>
-            <View style={styles.directNav}>
-                <TextInput
-                    style={styles.directInput}
-                    placeholder="Enter quiz code"
-                    placeholderTextColor="#ccc"
-                    value={directCode}
-                    onChangeText={setDirectCode}
-                />
-                <Button title="Go" onPress={handleDirectNavigate} color="#bb86fc" />
-            </View>
-            <View style={styles.uploadContainer}>
-                <Button title="Select PDF" onPress={pickPdf} color="#bb86fc" />
-                {pdf ? <Text style={styles.fileName}>Selected PDF: {pdf.name}</Text> : null}
-                {pdf && (
-                    <>
-                        <Text style={styles.fileName}>{pdf.name}</Text>
-                        <TextInput
-                            style={styles.titleInput}
-                            placeholder="Enter quiz title"
-                            placeholderTextColor="#ccc"
-                            value={title}
-                            onChangeText={setTitle}
-                        />
-                        {title ? (
-                            uploadLoading
-                            ? <ActivityIndicator color="#bb86fc" />
-                            : <Button title="Create Quiz" onPress={createQuiz} color="#bb86fc" />
-                        ) : null}
-                    </>
-                )}
-            </View>
-            <Text style={styles.sectionTitle}>My Quizzes</Text>
             <FlatList
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="none"
                 data={quizzesList}
                 keyExtractor={item => item.link_code || item.code}
+                contentContainerStyle={styles.container}
+                ListHeaderComponent={() => (
+                    <>
+                        <Text style={styles.header}>📚 PrepAI Quiz Manager</Text>
+                        <View style={styles.directNav}>
+                            <TextInput
+                                style={styles.directInput}
+                                placeholder="Enter quiz code"
+                                placeholderTextColor="#ccc"
+                                value={directCode}
+                                onChangeText={setDirectCode}
+                            />
+                            <Button title="Go" onPress={handleDirectNavigate} color="#bb86fc" />
+                        </View>
+                        <View style={styles.uploadContainer}>
+                            <Button title="Select PDF" onPress={pickPdf} color="#bb86fc" />
+                            {pdf ? <Text style={styles.fileName}>Selected PDF: {pdf.name}</Text> : null}
+                            {pdf && (
+                                <>
+                                    <Text style={styles.fileName}>{pdf.name}</Text>
+                                    <TextInput
+                                        style={styles.titleInput}
+                                        placeholder="Enter quiz title"
+                                        placeholderTextColor="#ccc"
+                                        value={title}
+                                        onChangeText={setTitle}
+                                    />
+                                    {title ? (
+                                        uploadLoading
+                                        ? <ActivityIndicator color="#bb86fc" />
+                                        : <Button title="Create Quiz" onPress={createQuiz} color="#bb86fc" />
+                                    ) : null}
+                                </>
+                            )}
+                        </View>
+                        <Text style={styles.sectionTitle}>My Quizzes</Text>
+                    </>
+                )}
                 renderItem={({ item }) => (
                     <View style={styles.quizBox}>
                         <TouchableOpacity style={styles.quizInfo} onPress={() => router.push(`/quiz/${item.link_code}`)}>
@@ -188,9 +198,12 @@ export default function Index() {
                         <Button title="Copy" onPress={() => Clipboard.setString(item.link_code)} color="#bb86fc" />
                     </View>
                 )}
+                ListFooterComponent={() => (
+                    <View style={{ marginVertical: 20 }}>
+                        <Button title="Logout" onPress={handleLogout} color="#e53935" />
+                    </View>
+                )}
             />
-            <Button title="Logout" onPress={handleLogout} color="#e53935" />
-        </ScrollView>
         </SafeAreaView>
     );
 }
@@ -201,7 +214,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#2d103b',
     },
     container: {
-        alignItems: 'center',
+        flexGrow: 1,
         paddingVertical: 20,
         paddingHorizontal: 15,
     },
@@ -265,30 +278,29 @@ const styles = StyleSheet.create({
         marginVertical: 15,
     },
     quizBox: {
-        width: 350,
-        padding: 15,
+        width: '100%',
+        maxWidth: 700,
         marginBottom: 12,
         backgroundColor: '#3a0d44',
         borderRadius: 10,
         padding: 18,
-        justifyContent: 'space-between',
+        justifyContent: 'center',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.2,
         shadowRadius: 2,
         elevation: 3,
-        alignItems: 'center',
     },
     quizTitle: {
         fontSize: 18,
         color: '#fff',
-        flex: 1,
-        textAlign: 'center',
+        marginBottom: 6,
+        textAlign: 'left',
     },
     quizCode: {
         fontFamily: 'monospace',
         color: '#ddd',
-        textAlign: 'center',
+        textAlign: 'left',
     },
     quizInfo: { flex: 1, paddingRight: 10 },
 });
