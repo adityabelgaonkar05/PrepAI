@@ -7,7 +7,6 @@ import axios from 'axios';
 import { BACKEND_URL } from '@env';
 import * as Clipboard from 'expo-clipboard';
 
-// Memoized header to manage its own title state and avoid re-render on typing
 const HeaderComponent = React.memo(({ directCode, setDirectCode, handleDirectNavigate, pickPdf, pdf, createQuiz, uploadLoading }) => {
     const [localTitle, setLocalTitle] = useState('');
     return (
